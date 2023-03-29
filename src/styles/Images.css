@@ -1,0 +1,57 @@
+.card-image {
+    display: flex;
+    flex-direction: column;
+    position: relative;    
+    max-width: 400px;
+}
+
+.image {
+    object-fit: cover;
+    width: 100%;
+    height: 400px;
+    border-radius: 10px;
+}
+
+.img-title {
+    font-size: 1.3em;
+    border-radius: 10px;
+    padding: 8px;
+    border: none;
+    margin-top: 5px;
+}
+
+.img-title:focus-visible{
+    outline: none;
+}
+
+.default-button {
+    border: none;
+    width: 100px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.delete-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 100%;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #1d2222ba;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn > img{
+    width: 25px;
+    height: 25px;
+}
+
+@media (max-width: 400px) {
+    .card-image {  
+        max-width: 320px;
+    }
+}
+

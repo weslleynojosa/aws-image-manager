@@ -1,25 +1,32 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import AWS from 'aws-sdk'
+import Gallery from './pages/Gallery';
+import Main from './pages/Main';
+import { useState, useEffect } from 'react';
+
+const getCred = JSON.parse(localStorage.getItem('ENV_PARAMS') || '{}')
+
+export const s3 = new AWS.S3({
+  params: { Bucket: getCred.bucket_name },
+  region: getCred.region,
+  accessKeyId: getCred.access_key,
+  secretAccessKey: getCred.secret_access_key,
+})
+
 
 function App() {
+  const [defParams, setDefParams] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (localStorage.getItem('ENV_PARAMS') != null) {
+      setDefParams(true)
+    }
+  },[])
+  
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      {!defParams ? <Main/> : <Gallery/>}
+    </>
   );
 }
 
