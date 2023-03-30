@@ -5,16 +5,16 @@ import '../styles/Gallery.css'
 
 export interface IPicture {
     url: string,
-    key: string | undefined
+    key: string | undefined,
+    id: number
 }
 
 
 const Gallery = () => {
     const [imgs, setImgs] = useState<IPicture[]>([])
-    const [width, setWidth] = useState<number>(0)
-    const [height, setHeight] = useState<number>(0)
+    const [imgFile, setImgFile] = useState<HTMLImageElement>()
     const [ratio, setRatio] = useState<number>(0)
-    const [bucketName, setBUcketName] = useState<string>(() => {
+    const [bucketName, setBucketName] = useState<string>(() => {
         let bucket = JSON.parse(localStorage.getItem('ENV_PARAMS') || '{}')
         return bucket.bucket_name
     })
@@ -24,45 +24,67 @@ const Gallery = () => {
 
     useEffect(() => {
         getImages()
-    },[bucketName])
+    },[])
+
+    const getImages = () => {
+        const params = {
+          Bucket: bucketName,
+        };
+        setTimeout(() => {
+            s3.listObjectsV2(params, (err, data) => {
+                if (err) {
+                    console.log(err, err.stack)
+                } else {
+                    const dataImg = data.Contents
+            
+                    if (dataImg) {
+                        let imgArray: IPicture[] = []
+                        dataImg.map((img, index) => {
+                            imgArray.push({ url: getImgUrl(img), key: img.Key, id: index })       
+                        })
+                        if (imgArray != imgs) {
+                            setImgs(imgArray)
+                        }
+                    }
+                }
+            })
+        }, 1000)
+    }
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUploadWarn('')     
         const { files } = e.target
         const uploadedImg = files as FileList
-        let img: HTMLImageElement;
-        img = document.createElement("img");
+        let img: HTMLImageElement = document.createElement("img");
+        var blob = URL.createObjectURL(uploadedImg?.[0]);
+        img.src = blob
         img.onload = () => {
-            setWidth(img.width)
-            setHeight(img.height) 
-        };
-
-        setRatio(height / width)
+            console.log(img.height + " " + img.width);
+            if (uploadedImg && uploadedImg?.[0].type === 'image/png') {
+                if ((img.height / img.width) <= 2) {
+                    if (uploadedImg[0].size / 1000 < 5000) {
+                        const params = {
+                            ACL: 'public-read',
+                            Body: uploadedImg?.[0],
+                            Bucket: bucketName,
+                            Key: uploadedImg?.[0].name,
+                            ContentType: 'image/png',
+                        };
     
-        if (uploadedImg?.[0].type === 'image/png') {
-            if (ratio <= 2) {
-                if (uploadedImg[0].size / 1000 < 5000) {
-                    const params = {
-                        ACL: 'public-read',
-                        Body: uploadedImg?.[0],
-                        Bucket: bucketName,
-                        Key: uploadedImg?.[0].name,
-                        ContentType: 'image/png',
-                    };
-
-                    s3.putObject(params)
-                    .send((err) => { if (err) console.log(err)})
-                    getImages()
+                        s3.putObject(params)
+                        .send((err) => { if (err) console.log(err)})
+                        showMessage()
+                        getImages()
+                    } else {
+                        setUploadWarn('Max size 5MB')
+                    }
                 } else {
-                    setUploadWarn('max size 5MB')
+                    setUploadWarn('Ratio between height and width exceed 2');
                 }
             } else {
-                setUploadWarn('ratio between height and width does not exceed 2');
+              setUploadWarn('Send only .PNG pictures');
             }
-        } else {
-          setUploadWarn('send only .PNG pictures');
-        }
-        showMessage()
+        }     
     }
 
     const showMessage = () => {
@@ -70,28 +92,6 @@ const Gallery = () => {
         setTimeout(() => {
             setUploadSucc(false)
         }, 2000)
-    }
-
-    const getImages = () => {
-        const params = {
-          Bucket: bucketName,
-          Delimiter: ''
-        };
-        s3.listObjectsV2(params, (err, data) => {
-          if (err) {
-            console.log(err, err.stack)
-          } else {
-            const dataImg = data.Contents
-    
-            if (dataImg) {
-                let imgArray: IPicture[] = []
-                dataImg.map((img) => {
-                    imgArray.push({ url: getImgUrl(img), key: img.Key })       
-                })
-                setImgs(imgArray)  
-            }
-          }
-        })
     }
 
     const getImgUrl = (img: AWS.S3.Object) => {
@@ -106,10 +106,10 @@ const Gallery = () => {
                 <input id='uploadImages' type={'file'} hidden onChange={handleUpload}/>
             </header>
             { uploadWarn !== '' ? <span className="warning">{uploadWarn}</span> : '' }
-            { uploadSucc ? <span className="warning">Image sent successfully</span> : '' }
+            { uploadSucc ? <span className="success">Image sent successfully</span> : '' }
             <div className="images-container">
-                {imgs.length > 0 && imgs.map((img, index) => {
-                    return <Image image={img} key={index}/>
+                {imgs.map((img, index) => {
+                    return <Image image={img} key={index} bucketName={bucketName} getImages={getImages}/>
                 })}
             </div>
         </div>
