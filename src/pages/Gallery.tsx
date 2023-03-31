@@ -12,8 +12,6 @@ export interface IPicture {
 
 const Gallery = () => {
     const [imgs, setImgs] = useState<IPicture[]>([])
-    const [imgFile, setImgFile] = useState<HTMLImageElement>()
-    const [ratio, setRatio] = useState<number>(0)
     const [bucketName, setBucketName] = useState<string>(() => {
         let bucket = JSON.parse(localStorage.getItem('ENV_PARAMS') || '{}')
         return bucket.bucket_name

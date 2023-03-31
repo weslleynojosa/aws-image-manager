@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { s3 } from "../App"
 import { IPicture } from "../pages/Gallery"
 import '../styles/Images.css'
